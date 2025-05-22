@@ -127,9 +127,9 @@ void drawStartScreen() {
   text("GALAXY DEFENDERS", width / 2, height / 2 - 60);
   textSize(24);
   fill(255);
-  text("Pressione R para começar", width / 2, height / 2 + 30);
-  textSize(18);
-  text("Use ← → para mover e espaço para atirar", width / 2, height / 2 + 60);
+  text("Pressione R para começar", width / 2, height / 2 + 10);
+   textSize(20);
+  text("Recorde: " + highScore + " por " + highScoreName, width / 2, height / 2 + 40);
 }
 
 void drawGame() {
@@ -203,7 +203,7 @@ void drawGame() {
     }
   }
 
-  if (boss != null) {
+  if (boss != null && !boss.isDead()) {
     boss.update();
     boss.display();
 
@@ -262,9 +262,9 @@ void drawGame() {
   textSize(18);
   fill(255);
   textAlign(LEFT);
-  text("Score: " + score, 20, 30);
-  text("Recorde: " + highScore, 20, 60);
-  text("Fase: " + level, 20, 90);
+  text("Pontos: " + score, 20, 30);
+  text("Fase: " + level, 20, 60);
+  text("Jogador: " + playerName, width - 150, 30);
 }
 
 void drawGameOver() {
@@ -361,10 +361,14 @@ class Invader {
   }
 
   void display() {
-    fill(0, 255, 0);
     rectMode(CENTER);
-    rect(x, yBase, size, size);
-  }
+  fill(255, 0, 255);  // cor rosa forte para teste
+  rect(x, yBase, size, size);
+  
+  fill(255);
+  textSize(12);
+  textAlign(CENTER, CENTER);
+}
   
   boolean hitBy(Bullet b) {
     return dist(b.x, b.y, x, yBase) < (b.size + size) / 2;
@@ -469,6 +473,7 @@ class Boss {
   float speedX;
   int directionX = 1;
   float baseY;
+  int shootCooldown = 15;
   int shootTimer = 0;
   int summonTimer = 0;
   boolean summoningEnabled = false;
@@ -498,10 +503,12 @@ class Boss {
     }
     y += sin(frameCount * 0.05) * 1.5;
 
-    shootTimer++;
-    if (shootTimer > 60) {
-      shootTimer = 0;
-      shootPattern();
+    if (!canShoot) {
+      shootTimer++;
+      if (shootTimer > shootCooldown) {
+        canShoot = true;
+        shootTimer = 0;
+      }
     }
 
     if (health <= maxHealth/2 && !summoningEnabled) {
@@ -563,7 +570,7 @@ class Boss {
     
     for (int i = 0; i < minionsToSummon; i++) {
       int spawnX = (int)random(invaderSize, width - invaderSize);
-      int spawnY = (int)random(80, height/2);
+      int spawnY = (int)random(invaderSize * 2, height/2);
       invaders.add(new ShieldInvader(spawnX, spawnY));
     }
   }
@@ -578,16 +585,14 @@ class Boss {
 }
 
 void saveHighScore() {
-  saveStrings("highscore.txt", new String[]{playerName, str(highScore)});
+  String[] data = {playerName, str(highScore)};
+  saveStrings("highscore.txt", data);
 }
 
 void loadHighScore() {
-  String[] lines = loadStrings("highscore.txt");
-  if (lines != null && lines.length >= 2) {
-    highScoreName = lines[0];
-    highScore = int(lines[1]);
-  } else {
-    highScoreName = "Sem Nome";
-    highScore = 0;
+  String[] data = loadStrings("highscore.txt");
+  if (data != null && data.length >= 2) {
+    highScoreName = data[0];
+    highScore = int(data[1]);
   }
 }
