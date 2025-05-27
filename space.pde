@@ -1,5 +1,11 @@
 // GalaxyDefenders - Space Invaders com melhorias e chefão
 
+// Adicionando a Trilha Sonora
+import processing.sound.*;
+SoundFile fase1_4Music;
+SoundFile faseBossMusic;
+
+
 final int GAME_START = 0;
 final int GAME_PLAY = 1;
 final int GAME_OVER = 2;
@@ -81,6 +87,12 @@ void setup() {
   // Redimensionar o background para caber na tela
   backgroundImg.resize(width, height);
   
+  //Adicionando Musica
+  fase1_4Music = new SoundFile(this, "fase1_4.mp3");
+  faseBossMusic = new SoundFile(this, "faseBoss.mp3");
+  
+  fase1_4Music.loop();
+  
   imageMode(CENTER);
   loadHighScores();
   initGame();
@@ -129,6 +141,8 @@ void initLevel() {
 }
 
 void draw() {
+  
+  checkPhaseMusic();
   image(backgroundImg, width/2, height/2);
    if (enteringName) {
     drawNameInput();
@@ -741,4 +755,23 @@ void loadHighScores() {
   } catch (Exception e) {
     println("Erro ao carregar highscores: " + e.getMessage());
   }
+}
+
+void checkPhaseMusic() {
+  if (level == maxLevel) {
+    if (!faseBossMusic.isPlaying()) {
+      fase1_4Music.stop();
+      faseBossMusic.loop();
+    }
+  } else {
+    if (!fase1_4Music.isPlaying()) {
+      faseBossMusic.stop();
+      fase1_4Music.loop();
+    }
+  }
+}
+
+void endGameMusic() {
+  fase1_4Music.stop();
+  faseBossMusic.stop();
 }
