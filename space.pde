@@ -88,12 +88,8 @@ void initLevel() {
       for (int col = 0; col < invaderCols; col++) {
         int x = col * (invaderSize + invaderPadding) + 50;
         int y = row * (invaderSize + invaderPadding) + 100;
-        // Adiciona chance de criar ShieldInvader
-        if (level > 1 && random(1) < 0.15 * (level - 1)) { 
-           invaders.add(new ShieldInvader(x, y));
-        } else {
-           invaders.add(new Invader(x, y));
-        }
+        // Adiciona apenas inimigos normais nas fases regulares
+        invaders.add(new Invader(x, y));
       }
     }
   }
@@ -168,14 +164,12 @@ void drawGame() {
     b.display();
     if (b.offscreen()) {
       playerBullets.remove(i);
-      // canShoot = true; // Permitir atirar assim que a bala sair da tela
     } else {
       // Colisão com Boss
       if (boss != null) {
         if (boss.hitBy(b)) {
           boss.health -= 100; // Dano aumentado para balancear a vida maior
           playerBullets.remove(i);
-          // canShoot = true;
           if (boss.isDead()) {
             boss = null;
             score += 500;
@@ -205,7 +199,6 @@ void drawGame() {
             score += 10;
           }
           playerBullets.remove(i);
-          // canShoot = true;
           break; // Bala só acerta um inimigo
         }
       }
@@ -250,21 +243,17 @@ void drawGame() {
   } else if (boss == null) { // Só atualiza invaders se não houver boss
     boolean edge = false;
     for (Invader inv : invaders) {
-       if (!(inv instanceof ShieldInvader)) { // ShieldInvaders não se movem horizontalmente
-         inv.x += invaderSpeed * invaderDirection;
-       }
+       inv.x += invaderSpeed * invaderDirection;
       inv.display();
 
       // Inimigos atiram
-      if (!(inv instanceof ShieldInvader) && random(1) < invaderShootProbability) {
+      if (random(1) < invaderShootProbability) {
         invaderBullets.add(new Bullet(inv.x, inv.yBase + inv.size / 2, false));
       }
 
       // Verifica se algum inimigo atingiu a borda
       if (inv.x > width - invaderSize / 2 || inv.x < invaderSize / 2) {
-         if (!(inv instanceof ShieldInvader)) { // ShieldInvaders não causam a inversão
-            edge = true;
-         }
+        edge = true;
       }
       
       // Verifica se inimigos chegaram perto do jogador
@@ -282,10 +271,7 @@ void drawGame() {
     if (edge) {
       invaderDirection *= -1;
       for (Invader inv : invaders) {
-        if (!(inv instanceof ShieldInvader)) {
-          inv.yBase += invaderDrop;
-          // inv.yBase = min(inv.yBase, height - 100); // Evita que saiam da tela por baixo
-        }
+        inv.yBase += invaderDrop;
       }
     }
 
@@ -298,7 +284,6 @@ void drawGame() {
         level++;
         gameState = GAME_LEVEL_TRANSITION;
       } 
-      // Se o boss foi derrotado, a transição para GAME_WIN já ocorreu
     }
   }
 
@@ -389,8 +374,6 @@ void keyPressed() {
       // Reinicia o jogo, mas pede o nome novamente
       enteringName = true; 
       playerName = "";
-      // gameState = GAME_START; // Não precisa, enteringName=true já faz isso
-      // initGame(); // initGame será chamado após inserir nome
     }
   } else if (gameState == GAME_LEVEL_TRANSITION) {
     if (key == ' ') {
@@ -507,13 +490,11 @@ class WaveBullet extends Bullet {
   float amplitude = 20;
   float frequency = 0.1;
   float startX;
-  // float startY; // Não precisa, y é atualizado normalmente
   int age = 0;
 
   WaveBullet(float x, float y) {
     super(x, y, false); // É sempre uma bala inimiga
     startX = x;
-    // startY = y;
   }
 
   void update() {
@@ -521,8 +502,6 @@ class WaveBullet extends Bullet {
     y += speed; // Movimento vertical normal
     x = startX + sin(age * frequency) * amplitude; // Movimento horizontal senoidal
   }
-  
-  // Não precisa redefinir display, herda de Bullet
 }
 
 class Boss {
@@ -626,7 +605,7 @@ class Boss {
     textSize(18);
     text("BOSS", width/2, 45);
     
-    rectMode(CENTER); // Resetar rectMode para padrão (embora imageMode seja CENTER)
+    rectMode(CENTER); // Resetar rectMode para padrão
   }
 
   // Padrão de tiros do Boss
@@ -662,8 +641,6 @@ class Boss {
       minionsToSummon = 3; // Invoca mais ShieldInvaders com pouca vida
     }
     
-    println("Boss summoning " + minionsToSummon + " minions!"); // Debug
-    
     for (int i = 0; i < minionsToSummon; i++) {
       // Tenta encontrar uma posição não muito perto de outros inimigos
       float spawnX = random(invaderSize, width - invaderSize);
@@ -679,9 +656,6 @@ class Boss {
       if (positionOk) {
          // Adiciona ShieldInvader
          invaders.add(new ShieldInvader(spawnX, spawnY));
-      } else {
-         println("Failed to find good spawn position for minion");
-         // Poderia tentar de novo ou pular este minion
       }
     }
   }
@@ -701,7 +675,6 @@ class Boss {
 void saveHighScore() {
   String[] data = {highScoreName, str(highScore)}; // Salva nome e score
   saveStrings("highscore.txt", data);
-  println("High score saved: " + highScoreName + " - " + highScore);
 }
 
 void loadHighScore() {
@@ -710,14 +683,11 @@ void loadHighScore() {
     if (data != null && data.length >= 2) {
       highScoreName = data[0];
       highScore = Integer.parseInt(data[1]);
-      println("High score loaded: " + highScoreName + " - " + highScore);
     } else {
-      println("No high score file found or invalid format.");
       highScore = 0;
       highScoreName = "Ninguém";
     }
   } catch (Exception e) {
-    println("Error loading high score: " + e.getMessage());
     highScore = 0;
     highScoreName = "Ninguém";
   }
