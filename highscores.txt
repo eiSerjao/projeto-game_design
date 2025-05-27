@@ -1,0 +1,10 @@
+ingryd,1280
+ingryd,1280
+ingryd,870
+otavio,840
+otavio,820
+tata,670
+tata,670
+r,500
+ingryd,460
+otavio,410

@@ -65,7 +65,7 @@ PImage enemyBulletImg;
 PImage backgroundImg;
 
 void setup() {
-   size(600, 700);
+   size(1000, 500);
   smooth();
   gameFont = createFont("Arial Bold", 32);
   smallFont = createFont("Arial", 16);
