@@ -9,7 +9,7 @@ final int GAME_LEVEL_TRANSITION = 4;
 int gameState = GAME_START;
 
 int playerX, playerY;
-int playerSize = 40; // Ajustado para melhor visualização da imagem
+int playerSize = 40;
 int playerSpeed = 5;
 boolean leftPressed = false;
 boolean rightPressed = false;
@@ -19,7 +19,7 @@ boolean canShoot = true;
 ArrayList<Invader> invaders;
 int invaderRows = 4;
 int invaderCols = 8;
-int invaderSize = 35; // Ajustado para melhor visualização da imagem
+int invaderSize = 35;
 int invaderPadding = 15;
 float invaderSpeed;
 int invaderDirection = 1;
@@ -30,17 +30,30 @@ ArrayList<Bullet> playerBullets;
 ArrayList<Bullet> invaderBullets;
 float bulletSpeed;
 
-int bulletSize = 10; // Ajustado para melhor visualização da imagem
+int bulletSize = 10;
 int score = 0;
-int highScore = 0;
 PFont gameFont;
+PFont smallFont;
 
 int level = 1;
 int maxLevel = 5;
 
 String playerName = "";
-String highScoreName = "Sem Nome";
 boolean enteringName = true;
+boolean firstGameRun = true;
+
+// Sistema de ranking
+class ScoreEntry {
+  String name;
+  int score;
+  
+  ScoreEntry(String name, int score) {
+    this.name = name;
+    this.score = score;
+  }
+}
+
+ArrayList<ScoreEntry> highScores = new ArrayList<ScoreEntry>();
 
 Boss boss;
 
@@ -54,8 +67,9 @@ void setup() {
   size(600, 700);
   smooth();
   gameFont = createFont("Arial Bold", 32);
+  smallFont = createFont("Arial", 16);
   textFont(gameFont);
-  loadHighScore();
+  loadHighScores();
 
   // Carregar imagens
   playerImg = loadImage("nave.png");
@@ -63,8 +77,7 @@ void setup() {
   playerBulletImg = loadImage("tiro.png");
   enemyBulletImg = loadImage("fogo.png");
 
-  imageMode(CENTER); // Definir modo de imagem para centro
-
+  imageMode(CENTER);
   initGame();
 }
 
@@ -72,6 +85,11 @@ void initGame() {
   level = 1;
   score = 0;
   initLevel();
+  
+  leftPressed = false;
+  rightPressed = false;
+  spacePressed = false;
+  canShoot = true;
 }
 
 void initLevel() {
@@ -88,7 +106,6 @@ void initLevel() {
       for (int col = 0; col < invaderCols; col++) {
         int x = col * (invaderSize + invaderPadding) + 50;
         int y = row * (invaderSize + invaderPadding) + 100;
-        // Adiciona apenas inimigos normais nas fases regulares
         invaders.add(new Invader(x, y));
       }
     }
@@ -140,16 +157,35 @@ void drawStartScreen() {
   fill(255);
   textSize(50);
   fill(0, 255, 200);
-  text("GALAXY DEFENDERS", width / 2, height / 2 - 60);
+  text("GALAXY DEFENDERS", width / 2, height / 2 - 100);
+  
+  // Desenha o ranking
+  drawHighScores();
+  
   textSize(24);
   fill(255);
-  text("Pressione R para começar", width / 2, height / 2 + 10);
-   textSize(20);
-  text("Recorde: " + highScore + " por " + highScoreName, width / 2, height / 2 + 40);
+  text("Pressione R para começar", width / 2, height / 2 + 180);
+  textSize(16);
+  text("Jogador atual: " + playerName, width / 2, height / 2 + 220);
+}
+
+void drawHighScores() {
+  textFont(smallFont);
+  textAlign(CENTER);
+  fill(255);
+  textSize(24);
+  text("MELHORES PONTUAÇÕES", width / 2, height / 2 - 50);
+  
+  textSize(20);
+  for (int i = 0; i < min(highScores.size(), 5); i++) {
+    ScoreEntry entry = highScores.get(i);
+    text((i+1) + ". " + entry.name + " - " + entry.score, width / 2, height / 2 - 20 + i * 30);
+  }
+  
+  textFont(gameFont); // Volta para a fonte principal
 }
 
 void drawGame() {
-  // Desenhar jogador com imagem
   image(playerImg, playerX, playerY, playerSize, playerSize);
 
   if (leftPressed) playerX -= playerSpeed;
@@ -157,7 +193,6 @@ void drawGame() {
 
   playerX = constrain(playerX, playerSize / 2, width - playerSize / 2);
 
-  // Atualizar e desenhar balas do jogador
   for (int i = playerBullets.size() - 1; i >= 0; i--) {
     Bullet b = playerBullets.get(i);
     b.update();
@@ -165,47 +200,40 @@ void drawGame() {
     if (b.offscreen()) {
       playerBullets.remove(i);
     } else {
-      // Colisão com Boss
       if (boss != null) {
         if (boss.hitBy(b)) {
-          boss.health -= 100; // Dano aumentado para balancear a vida maior
+          boss.health -= 100;
           playerBullets.remove(i);
           if (boss.isDead()) {
             boss = null;
             score += 500;
             gameState = GAME_WIN;
-            if (score > highScore) {
-              highScore = score;
-              highScoreName = playerName; // Salvar nome do jogador atual
-              saveHighScore();
-            }
+            addHighScore(playerName, score);
           }
-          continue; // Pula para a próxima bala
+          continue;
         }
       }
       
-      // Colisão com Inimigos
       for (int j = invaders.size() - 1; j >= 0; j--) {
         Invader inv = invaders.get(j);
         if (b.hits(inv)) {
           if (inv instanceof ShieldInvader) {
             ShieldInvader shieldInv = (ShieldInvader)inv;
-            if (shieldInv.hitBy(b)) { // hitBy já incrementa hitsTaken
+            if (shieldInv.hitBy(b)) {
               invaders.remove(j);
-              score += 20; // Mais pontos por destruir escudos
+              score += 20;
             }
           } else {
             invaders.remove(j);
             score += 10;
           }
           playerBullets.remove(i);
-          break; // Bala só acerta um inimigo
+          break;
         }
       }
     }
   }
 
-  // Atualizar e desenhar balas dos inimigos
   for (int i = invaderBullets.size() - 1; i >= 0; i--) {
     Bullet b = invaderBullets.get(i);
     b.update();
@@ -213,61 +241,43 @@ void drawGame() {
     if (b.offscreen()) invaderBullets.remove(i);
     else if (b.hits(playerX, playerY, playerSize)) {
       gameState = GAME_OVER;
-      if (score > highScore) {
-        highScore = score;
-        highScoreName = playerName;
-        saveHighScore();
-      }
+      addHighScore(playerName, score);
     }
   }
 
-  // Atualizar e desenhar Boss
   if (boss != null && !boss.isDead()) {
     boss.update();
     boss.display();
-    boss.shootPattern(); // Boss atira
+    boss.shootPattern();
 
-    // Desenhar e verificar colisão das balas do Boss
     for (int i = boss.bossBullets.size() - 1; i >= 0; i--) {
       Bullet b = boss.bossBullets.get(i);
       b.display();
       if (b.hits(playerX, playerY, playerSize)) {
         gameState = GAME_OVER;
-        if (score > highScore) {
-          highScore = score;
-          highScoreName = playerName;
-          saveHighScore();
-        }
+        addHighScore(playerName, score);
       }
     }
-  } else if (boss == null) { // Só atualiza invaders se não houver boss
+  } else if (boss == null) {
     boolean edge = false;
     for (Invader inv : invaders) {
        inv.x += invaderSpeed * invaderDirection;
       inv.display();
 
-      // Inimigos atiram
       if (random(1) < invaderShootProbability) {
         invaderBullets.add(new Bullet(inv.x, inv.yBase + inv.size / 2, false));
       }
 
-      // Verifica se algum inimigo atingiu a borda
       if (inv.x > width - invaderSize / 2 || inv.x < invaderSize / 2) {
         edge = true;
       }
       
-      // Verifica se inimigos chegaram perto do jogador
       if (inv.yBase > playerY - playerSize/2 - inv.size/2) {
         gameState = GAME_OVER;
-         if (score > highScore) {
-           highScore = score;
-           highScoreName = playerName;
-           saveHighScore();
-         }
+        addHighScore(playerName, score);
       }
     }
 
-    // Inverter direção e descer inimigos
     if (edge) {
       invaderDirection *= -1;
       for (Invader inv : invaders) {
@@ -275,9 +285,8 @@ void drawGame() {
       }
     }
 
-    // Verificar condição de vitória do nível
-    if (invaders.isEmpty()) { // Verifica se a lista está vazia
-      if (level >= maxLevel -1 && boss == null) { // Se era o último nível antes do boss
+    if (invaders.isEmpty()) {
+      if (level >= maxLevel -1 && boss == null) {
          level++;
          gameState = GAME_LEVEL_TRANSITION;
       } else if (level < maxLevel -1) {
@@ -287,15 +296,13 @@ void drawGame() {
     }
   }
 
-  // Desenhar informações na tela
   textSize(18);
   fill(255);
   textAlign(LEFT);
   text("Pontos: " + score, 20, 30);
   text("Fase: " + level, 20, 60);
   textAlign(RIGHT);
-  text("Recorde: " + highScore + " (" + highScoreName + ")", width - 20, 30);
-  text("Jogador: " + playerName, width - 20, 60);
+  text("Jogador: " + playerName, width - 20, 30);
 }
 
 void drawGameOver() {
@@ -343,7 +350,8 @@ void keyPressed() {
       if (playerName.length() > 0) {
         enteringName = false;
         gameState = GAME_START;
-        loadHighScore(); // Carrega o high score após nome ser inserido
+        loadHighScores();
+        firstGameRun = false;
       }
     } else if (key == BACKSPACE) {
       if (playerName.length() > 0) {
@@ -361,23 +369,26 @@ void keyPressed() {
     if (key == 'r' || key == 'R') {
       gameState = GAME_PLAY;
       initGame();
+      if (!firstGameRun) {
+        enteringName = false;
+      }
     }
   } else if (gameState == GAME_PLAY) {
     if (keyCode == LEFT) leftPressed = true;
     else if (keyCode == RIGHT) rightPressed = true;
     else if (key == ' ' && canShoot) {
       playerBullets.add(new Bullet(playerX, playerY - playerSize / 2, true));
-      canShoot = false; // Impede tiro contínuo
+      canShoot = false;
     }
   } else if (gameState == GAME_OVER || gameState == GAME_WIN) {
     if (key == 'r' || key == 'R') {
-      // Reinicia o jogo, mas pede o nome novamente
-      enteringName = true; 
-      playerName = "";
+      enteringName = false;
+      gameState = GAME_START;
+      initGame();
     }
   } else if (gameState == GAME_LEVEL_TRANSITION) {
     if (key == ' ') {
-      initLevel(); // Inicia o próximo nível
+      initLevel();
       gameState = GAME_PLAY;
     }
   }
@@ -386,7 +397,7 @@ void keyPressed() {
 void keyReleased() {
   if (keyCode == LEFT) leftPressed = false;
   else if (keyCode == RIGHT) rightPressed = false;
-  else if (key == ' ') canShoot = true; // Permite atirar novamente ao soltar espaço
+  else if (key == ' ') canShoot = true;
 }
 
 // --- Classes --- 
@@ -672,23 +683,41 @@ class Boss {
 
 // --- Funções Auxiliares --- 
 
-void saveHighScore() {
-  String[] data = {highScoreName, str(highScore)}; // Salva nome e score
-  saveStrings("highscore.txt", data);
+void addHighScore(String name, int score) {
+  highScores.add(new ScoreEntry(name, score));
+  // Ordena em ordem decrescente
+  highScores.sort((a, b) -> b.score - a.score);
+  // Mantém apenas os top 10
+  if (highScores.size() > 10) {
+    highScores = new ArrayList<ScoreEntry>(highScores.subList(0, 10));
+  }
+  saveHighScores();
 }
 
-void loadHighScore() {
+void saveHighScores() {
+  String[] lines = new String[highScores.size()];
+  for (int i = 0; i < highScores.size(); i++) {
+    ScoreEntry entry = highScores.get(i);
+    lines[i] = entry.name + "," + entry.score;
+  }
+  saveStrings("highscores.txt", lines);
+}
+
+void loadHighScores() {
+  highScores.clear();
   try {
-    String[] data = loadStrings("highscore.txt");
-    if (data != null && data.length >= 2) {
-      highScoreName = data[0];
-      highScore = Integer.parseInt(data[1]);
-    } else {
-      highScore = 0;
-      highScoreName = "Ninguém";
+    String[] lines = loadStrings("highscores.txt");
+    if (lines != null) {
+      for (String line : lines) {
+        String[] parts = split(line, ',');
+        if (parts.length == 2) {
+          highScores.add(new ScoreEntry(parts[0], int(parts[1])));
+        }
+      }
+      // Ordena após carregar
+      highScores.sort((a, b) -> b.score - a.score);
     }
   } catch (Exception e) {
-    highScore = 0;
-    highScoreName = "Ninguém";
+    println("Erro ao carregar highscores: " + e.getMessage());
   }
 }
