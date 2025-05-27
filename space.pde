@@ -62,24 +62,30 @@ PImage playerImg;
 PImage enemyImg;
 PImage playerBulletImg;
 PImage enemyBulletImg;
+PImage backgroundImg;
 
 void setup() {
-  size(600, 700);
+   size(600, 700);
   smooth();
   gameFont = createFont("Arial Bold", 32);
   smallFont = createFont("Arial", 16);
   textFont(gameFont);
-  loadHighScores();
 
   // Carregar imagens
+  backgroundImg = loadImage("background.jpg");
   playerImg = loadImage("nave.png");
   enemyImg = loadImage("enemy.png");
   playerBulletImg = loadImage("tiro.png");
   enemyBulletImg = loadImage("fogo.png");
 
+  // Redimensionar o background para caber na tela
+  backgroundImg.resize(width, height);
+  
   imageMode(CENTER);
+  loadHighScores();
   initGame();
 }
+
 
 void initGame() {
   level = 1;
@@ -123,10 +129,14 @@ void initLevel() {
 }
 
 void draw() {
-  background(0);
-  if (enteringName) {
+  image(backgroundImg, width/2, height/2);
+   if (enteringName) {
     drawNameInput();
   } else {
+    // Adiciona um overlay escuro para melhorar a visibilidade
+    fill(0, 150);
+    rect(0, 0, width, height);
+    
     switch(gameState) {
       case GAME_START: drawStartScreen(); break;
       case GAME_PLAY: drawGame(); break;
@@ -136,9 +146,10 @@ void draw() {
     }
   }
 }
-
 void drawNameInput() {
-  background(0);
+  fill(0, 200);
+  rect(0, 0, width, height);
+  
   fill(255);
   textAlign(CENTER);
   textSize(28);
@@ -152,7 +163,10 @@ void drawNameInput() {
 }
 
 void drawStartScreen() {
-  background(0);
+  // Fundo semi-transparente para o título e ranking
+  fill(0, 200);
+  rect(0, height/2 - 150, width, 400);
+  
   textAlign(CENTER, CENTER);
   fill(255);
   textSize(50);
@@ -168,6 +182,7 @@ void drawStartScreen() {
   textSize(16);
   text("Jogador atual: " + playerName, width / 2, height / 2 + 220);
 }
+
 
 void drawHighScores() {
   textFont(smallFont);
@@ -306,7 +321,9 @@ void drawGame() {
 }
 
 void drawGameOver() {
-  background(0);
+  fill(0, 200);
+  rect(0, 0, width, height);
+  
   fill(255, 0, 0);
   textAlign(CENTER);
   textSize(40);
@@ -318,7 +335,9 @@ void drawGameOver() {
 }
 
 void drawWinScreen() {
-  background(0);
+  fill(0, 200);
+  rect(0, 0, width, height);
+  
   fill(0, 255, 0);
   textAlign(CENTER);
   textSize(40);
@@ -330,7 +349,9 @@ void drawWinScreen() {
 }
 
 void drawLevelTransition() {
-  background(0);
+  fill(0, 200);
+  rect(0, 0, width, height);
+  
   textAlign(CENTER);
   textSize(36);
   fill(0, 255, 255);
