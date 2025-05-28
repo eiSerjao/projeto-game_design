@@ -3,8 +3,8 @@ ingryd,1280
 Paulo,1280
 Paulo,1280
 Paulo,1280
+Paulo,1280
 Paulo,1260
+Paulo,1110
 Paulo,1100
 ingryd,870
-Paulo,870
-otavio,840
