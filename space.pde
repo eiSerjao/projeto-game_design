@@ -1,4 +1,4 @@
-// GalaxyDefenders - Space Invaders com melhorias e chefão
+// DenfesGalaxy - Adicionando a Trilha Sonora e Alterando o Nome do Game
 
 // Adicionando a Trilha Sonora
 import processing.sound.*;
@@ -69,13 +69,17 @@ PImage enemyImg;
 PImage playerBulletImg;
 PImage enemyBulletImg;
 PImage backgroundImg;
+PFont pixelFont;
 
 void setup() {
-   size(1000, 500);
-  smooth();
-  gameFont = createFont("Arial Bold", 32);
-  smallFont = createFont("Arial", 16);
-  textFont(gameFont);
+   size(600, 700);
+    pixelFont = createFont("PixelifySans-Bold.ttf", 32);
+    textFont(pixelFont);
+     fill(255);
+   gameFont = createFont("Arial Bold", 32);
+    smallFont = createFont("Arial", 16);
+    textFont(gameFont);
+
 
   // Carregar imagens
   backgroundImg = loadImage("background.jpg");
@@ -114,6 +118,26 @@ void initLevel() {
   playerX = width / 2;
   playerY = height - 50;
 
+    // Controle da música
+    
+  if (level == maxLevel) {
+    // Troca para música do boss
+    if (fase1_4Music.isPlaying()) {
+      fase1_4Music.stop();
+    }
+    if (!faseBossMusic.isPlaying()) {
+      faseBossMusic.loop();
+    }
+  } else {
+    // Troca para música normal
+    if (faseBossMusic.isPlaying()) {
+      faseBossMusic.stop();
+    }
+    if (!fase1_4Music.isPlaying()) {
+      fase1_4Music.loop();
+    }
+  }
+  
   if (level == maxLevel) {
     boss = new Boss(width / 2, 150);
     invaders = new ArrayList<Invader>();
@@ -177,42 +201,78 @@ void drawNameInput() {
 }
 
 void drawStartScreen() {
-  // Fundo semi-transparente para o título e ranking
   fill(0, 200);
   rect(0, height/2 - 150, width, 400);
   
   textAlign(CENTER, CENTER);
-  fill(255);
-  textSize(50);
+  textFont(pixelFont);
   fill(0, 255, 200);
-  text("GALAXY DEFENDERS", width / 2, height / 2 - 100);
-  
-  // Desenha o ranking
+  textSize(50);
+  text("DENFES GALAXY", width / 2, height / 2 - 100);
+
   drawHighScores();
+
   
   textSize(24);
-  fill(255);
-  text("Pressione R para começar", width / 2, height / 2 + 180);
-  textSize(16);
-  text("Jogador atual: " + playerName, width / 2, height / 2 + 220);
+fill(255);
+text("Pressione R para começar", width / 2, height / 2 + 180);
+
+textFont(pixelFont);
+textSize(16);
+
+// Divide a mensagem
+String label = "Jogador atual: ";
+String name = playerName;
+
+// Calcula a posição para centralizar o texto todo
+float totalWidth = textWidth(label + name);
+float startX = width / 2 - totalWidth / 2;
+float y = height / 2 + 220;
+
+// Desenha o rótulo em branco
+fill(0,255,0);
+text(label, startX + textWidth(label) / 2, y);
+
+// Desenha o nome em verde
+fill(0, 255, 0);
+text(name, startX + textWidth(label) + textWidth(name) / 2,y);
 }
 
-
 void drawHighScores() {
-  textFont(smallFont);
+  textFont(pixelFont);
   textAlign(CENTER);
-  fill(255);
   textSize(24);
+  fill(255);
   text("MELHORES PONTUAÇÕES", width / 2, height / 2 - 50);
-  
+
   textSize(20);
   for (int i = 0; i < min(highScores.size(), 5); i++) {
     ScoreEntry entry = highScores.get(i);
-    text((i+1) + ". " + entry.name + " - " + entry.score, width / 2, height / 2 - 20 + i * 30);
+    float y = height / 2 - 20 + i * 30;
+
+    String rankStr = (i + 1) + ". ";
+    String nameStr = entry.name;
+    String scoreStr = " - " + entry.score;
+
+    // Medidas para posicionar corretamente
+    float rankWidth = textWidth(rankStr);
+    float nameWidth = textWidth(nameStr);
+
+    float startX = width / 2 - (textWidth(rankStr + nameStr + scoreStr)) / 2;
+
+    fill(255,255,0); // Branco para rank
+    text(rankStr, startX + rankWidth / 2, y);
+
+    fill(255, 255, 0); // Amarelo para nome
+    text(nameStr, startX + rankWidth + nameWidth / 2, y);
+
+    fill(255,255,0); // Branco para pontuação
+    text(scoreStr, startX + rankWidth + nameWidth + textWidth(scoreStr) / 2, y);
   }
-  
+
   textFont(gameFont); // Volta para a fonte principal
 }
+
 
 void drawGame() {
   image(playerImg, playerX, playerY, playerSize, playerSize);
@@ -325,14 +385,27 @@ void drawGame() {
     }
   }
 
-  textSize(18);
-  fill(255);
-  textAlign(LEFT);
-  text("Pontos: " + score, 20, 30);
-  text("Fase: " + level, 20, 60);
-  textAlign(RIGHT);
-  text("Jogador: " + playerName, width - 20, 30);
-}
+     fill(255);
+    textFont(pixelFont);
+    textSize(14);
+    textAlign(LEFT);
+    text("Pontos: " + score, 20, 30);
+    text("Fase: " + level, 20, 60);
+    
+    // Texto "Jogador: nome" com parte colorida
+    textAlign(RIGHT);
+    String label = "Jogador: ";
+    String name = playerName;
+    float labelWidth = textWidth(label);
+    float nameWidth = textWidth(name);
+    float totalWidth = labelWidth + nameWidth;
+    float startX = width - 20 - totalWidth;
+    
+    // Desenha "Jogador:" em verde
+    fill(0, 255, 0);
+    text(label, startX + labelWidth / 2, 30);
+    text(name, startX + labelWidth + nameWidth / 2, 30);
+    }
 
 void drawGameOver() {
   fill(0, 200);
